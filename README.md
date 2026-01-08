@@ -1,105 +1,46 @@
-# Wallet Service – Backend Assignment
+Issues:
+1. Missing validation in credit()
+No check for invalid amounts (negative or zero)
+No check if wallet exists
+Calling credit on a non-existing user will throw because wallet is undefined
 
-This repository contains a simple wallet service built with NestJS.
+2. Missing validation in getBalance()
+If user does not exist, returning 0 is misleading
+Should throw Wallet not found
 
-Users have a balance which can be credited or debited via API calls.
+3. debit() is async for no reason
+No asynchronous operations inside
+Should not be async
 
----
+4. Race condition potential
+Since storage is in-memory and not locked, concurrent credit + debit might result in inconsistent balance.
 
-## Duration
-**45–60 minutes max**
----
+5. DTO validation missing
+AmountDto likely has no validation:
+Should ensure:
+"amount" is number,
+"amount" > 0,
+"userId" is required.
 
-## What’s provided
-- A minimal NestJS application
-- In-memory wallet storage
-- APIs to credit and debit balance
+Improvements Made:
+1. Validation Added
+Prevent negative or zero amounts for both credit and debit
+Ensure userId is present
+Added class-validator to AmountDto
 
-Initial wallet balance for user `u1` is `100`.
+2. Consistent Error Handling
+Previously:
+getBalance() returned 0 for missing wallet → incorrect
+Now:
+All operations validate user existence using a shared helper method
 
----
+3. Removed unnecessary async
+debit() was marked async but had no asynchronous logic.
 
-## APIs
+4. Improved maintainability
+Introduced a getWalletOrThrow() method to avoid repeating wallet existence logic.
 
-### POST /wallet/credit
-Credit amount to a user's wallet.
-
-**Request Body:**
-```json
-{
-  "userId": "u1",
-  "amount": 50
-}
-```
-
-**Response:**
-```json
-{
-  "balance": 150
-}
-```
-
-### POST /wallet/debit
-Debit amount from a user's wallet.
-
-**Request Body:**
-```json
-{
-  "userId": "u1",
-  "amount": 30
-}
-```
-
-**Response:**
-```json
-{
-  "balance": 70
-}
-```
-
-**Error Response (400 Bad Request):**
-```json
-{
-  "statusCode": 400,
-  "message": "Insufficient balance"
-}
-```
-
-### GET /wallet/balance
-Get the current balance for a user.
-
-**Query Parameters:**
-- `userId` (required): The user ID (e.g., "u1")
-
-**Response:**
-```json
-{
-  "balance": 100
-}
-```  
-
----
-
-## Task (mandatory)
-
-1. Review the implementation.
-2. Identify any potential issues and modify the implementation to address them.
-3. Explain your approach and any assumptions or trade-offs.
-
-You may refactor the service if needed, but minimal changes are preferred.
-
-**Note:** Please ensure your code is well-documented with clear comments explaining your approach and any complex logic.
-
----
-
-## Notes
-
-- The storage is intentionally in-memory.
-- There is no single "correct" solution.
-- You may update this README if required to document your changes.
-
----
-
-## Submission
-
-- Fork this repository and share the link on email.
+Trade-offs & Assumptions:
+Storage remains in-memory as per assignment
+No concurrency locks added to keep solution minimal
+In a real system, transactions or DB-level locking would be needed

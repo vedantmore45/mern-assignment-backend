@@ -8,6 +8,7 @@ export class WalletController {
 
   @Get('balance')
   getBalance(@Query('userId') userId: string) {
+    // Validate userId exists and throw if not found (improves error clarity)
     return {
       balance: this.walletService.getBalance(userId),
     };
@@ -15,16 +16,19 @@ export class WalletController {
 
   @Post('credit')
   credit(@Body() body: AmountDto) {
+      // DTO exists but requires class-validator decorators for runtime validation
+    // Ensures amount > 0 and userId is provided
     return {
       balance: this.walletService.credit(body.userId, body.amount),
     };
   }
 
   @Post('debit')
-  async debit(@Body() body: AmountDto) {
-    const wallet = await this.walletService.debit(body.userId, body.amount);
+  debit(@Body() body: AmountDto) {
+    // Debit should validate amount before calling service
+    // Service will throw on insufficient balance
     return {
-      balance: wallet.balance,
+      balance: this.walletService.debit(body.userId, body.amount),
     };
   }
 }
